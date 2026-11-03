@@ -1,0 +1,26 @@
+{
+  "version": "1.0.0",
+  "updatedAt": "2026-11-03T01:10:00Z",
+  "categories": [
+    {
+      "id": "utilidades",
+      "name": "Utilidades",
+      "description": "Herramientas prácticas del día a día"
+    }
+  ],
+  "apps": [
+    {
+      "id": "digital-clock",
+      "name": "Digital Clock",
+      "description": "Reloj digital minimalista",
+      "icon": "Clock",
+      "category": "Utilidades",
+      "status": "Disponible",
+      "version": "1.0.0",
+      "author": "Gemini",
+      "createdAt": "2026-11-03",
+      "entryPoint": "src/apps/digital-clock/index.tsx",
+      "tags": ["reloj", "hora", "tiempo", "utilidades", "minimalista"]
+    }
+  ]
+}
