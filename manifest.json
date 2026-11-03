@@ -1,0 +1,19 @@
+{
+  "name": "MY MICRO APPS — Espacio Offline",
+  "short_name": "MicroApps",
+  "description": "Tu espacio personal de microaplicaciones offline-first para celular",
+  "start_url": "./index.html",
+  "scope": "./",
+  "display": "standalone",
+  "orientation": "any",
+  "background_color": "#090A0F",
+  "theme_color": "#090A0F",
+  "icons": [
+    {
+      "src": "./icon.svg",
+      "sizes": "512x512 192x192 128x128 64x64",
+      "type": "image/svg+xml",
+      "purpose": "any maskable"
+    }
+  ]
+}

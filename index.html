@@ -2,114 +2,815 @@
 <html lang="es" class="dark">
 <head>
   <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>MY MICRO APPS — Mi espacio de aplicaciones</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
+  <title>MY MICRO APPS — Espacio Offline Móvil</title>
+
+  <!-- PWA & Mobile Meta Tags -->
+  <meta name="theme-color" content="#090A0F">
+  <meta name="apple-mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+  <meta name="apple-mobile-web-app-title" content="MicroApps">
+  <link rel="manifest" href="./manifest.json">
+  <link rel="icon" type="image/svg+xml" href="./icon.svg">
+  <link rel="apple-touch-icon" href="./icon.svg">
+
   <script src="https://cdn.tailwindcss.com"></script>
   <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500;700&display=swap" rel="stylesheet">
+
   <style>
-    body { background-color: #090A0F; color: #F8FAFC; font-family: 'Inter', sans-serif; }
+    body {
+      background-color: #090A0F;
+      color: #F8FAFC;
+      font-family: 'Inter', -apple-system, BlinkMacSystemFont, sans-serif;
+      -webkit-tap-highlight-color: transparent;
+    }
     .font-mono { font-family: 'JetBrains Mono', monospace; }
     .glow-violet { box-shadow: 0 0 25px -4px rgba(139, 92, 246, 0.35); }
+    .glow-emerald { box-shadow: 0 0 20px -4px rgba(16, 185, 129, 0.3); }
+
+    /* Custom scrollbars */
+    ::-webkit-scrollbar { width: 6px; height: 6px; }
+    ::-webkit-scrollbar-track { background: #0D0E15; }
+    ::-webkit-scrollbar-thumb { background: #23273D; border-radius: 9999px; }
+    ::-webkit-scrollbar-thumb:hover { background: #8B5CF6; }
+
+    /* Safe areas for mobile notch / gesture bar */
+    .safe-top { padding-top: env(safe-area-inset-top, 0px); }
+    .safe-bottom { padding-bottom: env(safe-area-inset-bottom, 0px); }
+
+    /* Smooth transitions */
+    .tab-active {
+      background-color: rgba(139, 92, 246, 0.18);
+      color: #DDD6FE;
+      border-color: rgba(139, 92, 246, 0.4);
+    }
   </style>
 </head>
-<body class="min-h-screen bg-[#090A0F] text-zinc-100 flex flex-col md:flex-row antialiased">
-  <!-- Sidebar -->
-  <aside class="w-full md:w-64 bg-[#0D0E15] border-b md:border-b-0 md:border-r border-[#1F2232] flex flex-col justify-between md:h-screen md:sticky md:top-0 p-5">
+<body class="min-h-screen bg-[#090A0F] text-zinc-100 flex flex-col md:flex-row antialiased select-none md:select-auto">
+
+  <!-- Mobile Top Header (Phone view) -->
+  <header class="md:hidden flex items-center justify-between px-4 py-3 bg-[#0D0E15] border-b border-[#1F2232] safe-top sticky top-0 z-30">
+    <div class="flex items-center gap-2.5">
+      <div class="w-8 h-8 rounded-xl bg-violet-600/20 border border-violet-500/30 flex items-center justify-center text-violet-400 font-mono font-bold text-sm">M</div>
+      <div>
+        <div class="text-xs font-bold tracking-wider text-white font-mono">MICRO APPS</div>
+        <div class="text-[9px] text-zinc-400">Offline Móvil</div>
+      </div>
+    </div>
+
+    <div class="flex items-center gap-2">
+      <!-- Network indicator badge -->
+      <div id="net-badge-mobile" class="flex items-center gap-1.5 px-2 py-1 rounded-full text-[10px] font-mono bg-emerald-500/10 text-emerald-400 border border-emerald-500/25">
+        <span class="w-1.5 h-1.5 rounded-full bg-emerald-400 animate-pulse"></span>
+        <span>Online</span>
+      </div>
+
+      <!-- Quick Upload Button for Mobile -->
+      <button id="btn-quick-upload-mobile" class="p-2 rounded-xl bg-violet-600 text-white hover:bg-violet-500 transition-all" title="Subir / Pegar Código">
+        <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4"/>
+        </svg>
+      </button>
+    </div>
+  </header>
+
+  <!-- Sidebar (Desktop / Tablet) -->
+  <aside class="hidden md:flex w-64 bg-[#0D0E15] border-r border-[#1F2232] flex-col justify-between h-screen sticky top-0 p-5 z-20">
     <div class="flex flex-col gap-6">
       <div class="flex items-center gap-3">
-        <div class="w-9 h-9 rounded-xl bg-violet-600/20 border border-violet-500/30 flex items-center justify-center text-violet-400 font-mono font-bold">M</div>
+        <div class="w-10 h-10 rounded-xl bg-violet-600/20 border border-violet-500/30 flex items-center justify-center text-violet-400 font-mono font-bold text-base">M</div>
         <div>
           <div class="text-sm font-bold tracking-wider text-white font-mono">MY MICRO APPS</div>
-          <div class="text-[10px] text-zinc-400">Personal App Marketplace</div>
+          <div class="text-[10px] text-zinc-400">Offline-First App Hub</div>
         </div>
       </div>
 
-      <button id="btn-create" class="w-full py-2.5 px-4 rounded-xl text-xs font-semibold text-white bg-gradient-to-r from-violet-600 to-indigo-600 hover:from-violet-500 hover:to-indigo-500 glow-violet transition-all">
-        + Crear aplicación
+      <!-- Main Action: Subir o Pegar Código -->
+      <button id="btn-create" class="w-full py-2.5 px-4 rounded-xl text-xs font-semibold text-white bg-gradient-to-r from-violet-600 to-indigo-600 hover:from-violet-500 hover:to-indigo-500 glow-violet transition-all flex items-center justify-center gap-2">
+        <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-8l-4-4m0 0L8 8m4-4v12"/>
+        </svg>
+        <span>Subir o Pegar Código</span>
       </button>
 
+      <!-- Navigation Tabs -->
       <nav class="flex flex-col gap-1.5 text-xs font-medium">
-        <button data-tab="home" class="nav-btn flex items-center justify-between px-3 py-2.5 rounded-lg text-zinc-400 hover:text-white hover:bg-[#151724]">
-          <span>Inicio</span>
+        <button data-tab="all" class="nav-btn flex items-center justify-between px-3 py-2.5 rounded-lg tab-active border transition-all">
+          <span class="flex items-center gap-2">
+            <span>📦</span> Todas las apps
+          </span>
+          <span id="app-count-all" class="px-1.5 py-0.5 rounded text-[10px] font-mono bg-[#1E2235] text-zinc-300">0</span>
         </button>
-        <button data-tab="apps" class="nav-btn flex items-center justify-between px-3 py-2.5 rounded-lg bg-violet-600/15 text-violet-300 border border-violet-500/30">
-          <span>Mis aplicaciones</span>
-          <span id="app-count" class="px-1.5 py-0.5 rounded text-[10px] font-mono bg-[#1E2235] text-zinc-300">1</span>
+
+        <button data-tab="local" class="nav-btn flex items-center justify-between px-3 py-2.5 rounded-lg text-zinc-400 hover:text-white hover:bg-[#151724] border border-transparent transition-all">
+          <span class="flex items-center gap-2">
+            <span>📱</span> En mi celular (Cache)
+          </span>
+          <span id="app-count-local" class="px-1.5 py-0.5 rounded text-[10px] font-mono bg-emerald-950/70 text-emerald-300 border border-emerald-500/30">0</span>
         </button>
-        <button data-tab="favorites" class="nav-btn flex items-center justify-between px-3 py-2.5 rounded-lg text-zinc-400 hover:text-white hover:bg-[#151724]">
-          <span>Favoritos</span>
-          <span id="fav-count" class="hidden px-1.5 py-0.5 rounded text-[10px] font-mono bg-violet-950 text-violet-300">0</span>
+
+        <button data-tab="favorites" class="nav-btn flex items-center justify-between px-3 py-2.5 rounded-lg text-zinc-400 hover:text-white hover:bg-[#151724] border border-transparent transition-all">
+          <span class="flex items-center gap-2">
+            <span>★</span> Favoritos
+          </span>
+          <span id="fav-count" class="px-1.5 py-0.5 rounded text-[10px] font-mono bg-violet-950 text-violet-300">0</span>
         </button>
-        <button id="btn-settings" class="flex items-center justify-between px-3 py-2.5 rounded-lg text-zinc-400 hover:text-white hover:bg-[#151724]">
-          <span>Configuración</span>
+
+        <button id="btn-export-backup" class="flex items-center justify-between px-3 py-2.5 rounded-lg text-zinc-400 hover:text-white hover:bg-[#151724] border border-transparent transition-all">
+          <span class="flex items-center gap-2">
+            <span>💾</span> Exportar / Respaldar
+          </span>
         </button>
       </nav>
+
+      <!-- PWA Install Prompt Banner for Desktop/Mobile -->
+      <div id="pwa-install-banner" class="hidden p-3 rounded-xl bg-violet-950/40 border border-violet-500/30 text-xs flex flex-col gap-2">
+        <div class="flex items-center gap-2 text-violet-200 font-semibold text-[11px]">
+          <span>📲</span> Instalar en dispositivo
+        </div>
+        <p class="text-[10px] text-zinc-400">Funciona 100% offline y se abre como app nativa.</p>
+        <button id="btn-install-pwa" class="w-full py-1.5 rounded-lg bg-violet-600 hover:bg-violet-500 text-white font-medium text-[11px] transition-all">
+          Instalar ahora
+        </button>
+      </div>
     </div>
 
-    <div class="hidden md:block pt-4 border-t border-[#1F2232] text-[11px] text-zinc-400">
-      <div class="flex items-center gap-2">
-        <span class="w-2 h-2 rounded-full bg-emerald-400 animate-pulse"></span>
-        <span class="font-mono text-zinc-300">apps-registry.json activo</span>
+    <!-- Sidebar footer status -->
+    <div class="pt-4 border-t border-[#1F2232] text-[11px] text-zinc-400 flex flex-col gap-2">
+      <div class="flex items-center justify-between">
+        <span class="text-zinc-500">Conexión:</span>
+        <div id="net-badge-desktop" class="flex items-center gap-1.5 font-mono text-emerald-400">
+          <span class="w-2 h-2 rounded-full bg-emerald-400 animate-pulse"></span>
+          <span>Online</span>
+        </div>
+      </div>
+      <div class="flex items-center justify-between text-[10px]">
+        <span class="text-zinc-500">Caché offline:</span>
+        <span id="storage-status" class="font-mono text-violet-400">IndexedDB Activo</span>
       </div>
     </div>
   </aside>
 
-  <!-- Main -->
-  <main class="flex-1 p-6 sm:p-10 max-w-7xl mx-auto w-full flex flex-col gap-8">
-    <header class="flex flex-col md:flex-row md:items-center justify-between gap-4 pb-6 border-b border-[#1F2232]">
+  <!-- Main Content Area -->
+  <main class="flex-1 p-4 sm:p-8 max-w-7xl mx-auto w-full flex flex-col gap-6 safe-bottom">
+    <!-- Header -->
+    <header class="flex flex-col md:flex-row md:items-center justify-between gap-4 pb-4 border-b border-[#1F2232]">
       <div>
-        <h1 class="text-2xl sm:text-3xl font-bold text-white">Mi espacio de aplicaciones</h1>
-        <p class="text-sm text-zinc-400 mt-1">Todas tus herramientas en un solo lugar</p>
+        <div class="flex items-center gap-2.5">
+          <h1 class="text-xl sm:text-2xl font-bold text-white">Espacio de Microaplicaciones</h1>
+          <span id="mode-pill" class="px-2 py-0.5 rounded-full text-[10px] font-mono bg-violet-500/10 text-violet-300 border border-violet-500/30">Offline-First</span>
+        </div>
+        <p class="text-xs sm:text-sm text-zinc-400 mt-1">Sube o pega código HTML/JS: se renderiza y queda guardado en la memoria de tu celular para usar sin internet.</p>
       </div>
-      <div class="relative w-full md:w-80">
-        <input id="search-input" type="text" placeholder="Buscar microaplicaciones..." class="w-full px-4 py-2.5 text-xs bg-[#11131F] border border-[#23273D] focus:border-violet-500 rounded-xl text-zinc-100 placeholder-zinc-500 focus:outline-none">
+
+      <!-- Search & Mobile Actions -->
+      <div class="flex items-center gap-2 w-full md:w-auto">
+        <div class="relative flex-1 md:w-80">
+          <input id="search-input" type="text" placeholder="Buscar aplicaciones..." class="w-full px-3.5 py-2 text-xs bg-[#11131F] border border-[#23273D] focus:border-violet-500 rounded-xl text-zinc-100 placeholder-zinc-500 focus:outline-none transition-all">
+          <svg class="w-4 h-4 text-zinc-500 absolute right-3 top-2.5 pointer-events-none" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"/>
+          </svg>
+        </div>
+
+        <button id="btn-create-mobile" class="md:hidden py-2 px-3 rounded-xl text-xs font-semibold text-white bg-violet-600 hover:bg-violet-500 shrink-0 flex items-center gap-1.5">
+          <span>+ Subir</span>
+        </button>
       </div>
     </header>
 
-    <div class="flex items-center justify-between">
-      <h2 id="section-title" class="text-lg font-semibold text-white">Mis aplicaciones</h2>
-      <span class="px-2.5 py-1 rounded-lg text-xs bg-violet-600/20 text-violet-300 border border-violet-500/30">Categoría: Utilidades</span>
+    <!-- Mobile Navigation Tabs (visible only on small screens) -->
+    <div class="flex md:hidden items-center gap-2 overflow-x-auto pb-1 text-xs">
+      <button data-tab="all" class="nav-btn shrink-0 px-3 py-1.5 rounded-lg tab-active border text-zinc-200">
+        📦 Todas (<span id="mob-count-all">0</span>)
+      </button>
+      <button data-tab="local" class="nav-btn shrink-0 px-3 py-1.5 rounded-lg bg-[#11131F] border border-[#23273D] text-emerald-400">
+        📱 En celular (<span id="mob-count-local">0</span>)
+      </button>
+      <button data-tab="favorites" class="nav-btn shrink-0 px-3 py-1.5 rounded-lg bg-[#11131F] border border-[#23273D] text-zinc-400">
+        ★ Favoritos (<span id="mob-count-fav">0</span>)
+      </button>
     </div>
 
-    <div id="apps-grid" class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-5"></div>
+    <!-- Category filter & stats header -->
+    <div class="flex items-center justify-between text-xs">
+      <div class="flex items-center gap-2">
+        <h2 id="section-title" class="font-semibold text-white text-sm">Mis aplicaciones</h2>
+        <span id="app-counter-badge" class="px-2 py-0.5 rounded text-[11px] font-mono bg-zinc-800 text-zinc-300">0 apps</span>
+      </div>
+
+      <!-- Quick helper trigger -->
+      <button id="btn-quick-samples" class="text-xs text-violet-400 hover:text-violet-300 underline underline-offset-4 flex items-center gap-1">
+        <span>⚡ Cargar plantilla de ejemplo</span>
+      </button>
+    </div>
+
+    <!-- Empty state (when no apps match filter) -->
+    <div id="empty-state" class="hidden flex-col items-center justify-center p-12 text-center bg-[#0D0E15] border border-[#1F2232] rounded-2xl">
+      <div class="w-14 h-14 rounded-2xl bg-violet-500/10 border border-violet-500/20 flex items-center justify-center text-2xl mb-4">
+        📱
+      </div>
+      <h3 class="text-base font-bold text-white">No hay microaplicaciones aquí</h3>
+      <p class="text-xs text-zinc-400 max-w-sm mt-1">Sube o pega tu código HTML/JS para crear tu primera aplicación guardada localmente en tu celular.</p>
+      <button id="btn-empty-create" class="mt-4 px-4 py-2 rounded-xl text-xs font-semibold text-white bg-violet-600 hover:bg-violet-500 transition-all">
+        + Subir o Pegar Código Ahora
+      </button>
+    </div>
+
+    <!-- Apps Grid -->
+    <div id="apps-grid" class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4"></div>
   </main>
 
-  <!-- Modal Digital Clock / App Runner -->
-  <div id="app-modal" class="hidden fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/80 backdrop-blur-md">
-    <div class="bg-[#0E101A] border border-[#23273D] rounded-2xl max-w-2xl w-full overflow-hidden shadow-2xl">
-      <div class="flex items-center justify-between px-6 py-4 bg-[#121422] border-b border-[#202438]">
-        <div class="flex items-center gap-3">
-          <button id="btn-close-app" class="px-2.5 py-1 text-xs font-mono rounded-lg bg-[#1A1D2E] text-zinc-300 hover:text-white border border-[#282D45]">← Volver</button>
-          <span id="modal-app-title" class="text-sm font-semibold text-white">Digital Clock</span>
-          <span class="px-2 py-0.5 rounded text-[10px] bg-violet-500/10 text-violet-300 border border-violet-500/20">Utilidades</span>
+  <!-- ========================================================================= -->
+  <!-- MODAL 1: SUBIR O PEGAR CÓDIGO (Offline Creator) -->
+  <!-- ========================================================================= -->
+  <div id="create-modal" class="hidden fixed inset-0 z-50 flex items-center justify-center p-3 sm:p-5 bg-black/85 backdrop-blur-md overflow-y-auto">
+    <div class="bg-[#0E101A] border border-[#23273D] rounded-2xl max-w-2xl w-full p-4 sm:p-6 flex flex-col gap-4 shadow-2xl my-auto max-h-[92vh] overflow-y-auto">
+      
+      <!-- Modal Header -->
+      <div class="flex items-center justify-between pb-3 border-b border-[#1F2232]">
+        <div class="flex items-center gap-2.5">
+          <div class="w-8 h-8 rounded-xl bg-violet-600/20 border border-violet-500/30 flex items-center justify-center text-violet-400 text-sm">
+            ⚡
+          </div>
+          <div>
+            <h3 id="create-modal-title" class="text-sm sm:text-base font-bold text-white">Subir o Pegar Microaplicación</h3>
+            <p class="text-[11px] text-zinc-400">Se guardará en el almacenamiento local de tu celular para funcionar offline</p>
+          </div>
         </div>
-        <span class="text-xs font-mono text-emerald-400">● Disponible</span>
+        <button id="btn-close-create" class="w-8 h-8 rounded-lg bg-[#151724] text-zinc-400 hover:text-white flex items-center justify-center text-base">✕</button>
       </div>
-      <div class="p-10 sm:p-14 flex flex-col items-center justify-center text-center bg-[#090A0F]">
+
+      <!-- Quick Template Selector Pills -->
+      <div>
+        <label class="block text-[11px] font-medium text-zinc-400 mb-1.5">¿Quieres probar rápido? Usa una plantilla offline:</label>
+        <div class="flex flex-wrap gap-1.5">
+          <button type="button" class="preset-btn px-2.5 py-1 rounded-lg text-[11px] bg-[#161828] hover:bg-violet-950/60 border border-[#242940] hover:border-violet-500/40 text-zinc-300 transition-all" data-preset="calc">
+            🧮 Calculadora
+          </button>
+          <button type="button" class="preset-btn px-2.5 py-1 rounded-lg text-[11px] bg-[#161828] hover:bg-violet-950/60 border border-[#242940] hover:border-violet-500/40 text-zinc-300 transition-all" data-preset="notes">
+            📝 Bloc de Notas Offline
+          </button>
+          <button type="button" class="preset-btn px-2.5 py-1 rounded-lg text-[11px] bg-[#161828] hover:bg-violet-950/60 border border-[#242940] hover:border-violet-500/40 text-zinc-300 transition-all" data-preset="timer">
+            ⏱️ Cronómetro Pomodoro
+          </button>
+          <button type="button" class="preset-btn px-2.5 py-1 rounded-lg text-[11px] bg-[#161828] hover:bg-violet-950/60 border border-[#242940] hover:border-violet-500/40 text-zinc-300 transition-all" data-preset="todos">
+            ✓ Lista de Tareas
+          </button>
+        </div>
+      </div>
+
+      <!-- Input Form -->
+      <form id="app-form" class="flex flex-col gap-3.5">
+        <input type="hidden" id="editing-app-id" value="">
+
+        <!-- Basic Metadata (Row 1) -->
+        <div class="grid grid-cols-1 sm:grid-cols-3 gap-3">
+          <div class="sm:col-span-2">
+            <label class="block text-[11px] font-medium text-zinc-400 mb-1">Nombre de la Aplicación *</label>
+            <input id="form-name" type="text" required placeholder="Ej: Mi Calculadora o Conversor" class="w-full px-3 py-2 text-xs bg-[#121422] border border-[#23273D] focus:border-violet-500 rounded-xl text-white placeholder-zinc-500 focus:outline-none">
+          </div>
+
+          <div>
+            <label class="block text-[11px] font-medium text-zinc-400 mb-1">Ícono (Emoji) *</label>
+            <div class="flex items-center gap-2">
+              <input id="form-icon" type="text" maxlength="4" value="📱" class="w-14 px-3 py-2 text-center text-base bg-[#121422] border border-[#23273D] focus:border-violet-500 rounded-xl text-white focus:outline-none">
+              <div class="flex gap-1 overflow-x-auto text-sm py-1">
+                <button type="button" class="icon-quick-pick hover:scale-110 transition-transform">🧮</button>
+                <button type="button" class="icon-quick-pick hover:scale-110 transition-transform">📝</button>
+                <button type="button" class="icon-quick-pick hover:scale-110 transition-transform">⚡</button>
+                <button type="button" class="icon-quick-pick hover:scale-110 transition-transform">🎮</button>
+                <button type="button" class="icon-quick-pick hover:scale-110 transition-transform">📊</button>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <!-- Metadata (Row 2) -->
+        <div class="grid grid-cols-1 sm:grid-cols-2 gap-3">
+          <div>
+            <label class="block text-[11px] font-medium text-zinc-400 mb-1">Categoría</label>
+            <select id="form-category" class="w-full px-3 py-2 text-xs bg-[#121422] border border-[#23273D] focus:border-violet-500 rounded-xl text-zinc-200 focus:outline-none">
+              <option value="Utilidades">Utilidades</option>
+              <option value="Productividad">Productividad</option>
+              <option value="Herramientas">Herramientas</option>
+              <option value="Juegos">Juegos</option>
+              <option value="Finanzas">Finanzas</option>
+              <option value="Personal">Personal</option>
+            </select>
+          </div>
+
+          <div>
+            <label class="block text-[11px] font-medium text-zinc-400 mb-1">Descripción breve</label>
+            <input id="form-desc" type="text" placeholder="Ej: Funciona sin conexión en tu dispositivo" class="w-full px-3 py-2 text-xs bg-[#121422] border border-[#23273D] focus:border-violet-500 rounded-xl text-white placeholder-zinc-500 focus:outline-none">
+          </div>
+        </div>
+
+        <!-- File Upload Area -->
+        <div class="p-3 rounded-xl bg-[#121422] border border-dashed border-[#2C324D] hover:border-violet-500/60 transition-all flex flex-col items-center justify-center text-center cursor-pointer relative" id="drop-zone">
+          <input type="file" id="form-file" accept=".html,.htm,.txt,.js" class="absolute inset-0 opacity-0 cursor-pointer w-full h-full">
+          <div class="flex items-center gap-2 text-violet-400 text-xs font-semibold mb-1">
+            <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M7 16a4 4 0 01-.88-7.903A5 5 0 1115.9 6L16 6a5 5 0 011 9.9M15 13l-3-3m0 0l-3 3m3-3v12"/>
+            </svg>
+            <span>Arrastra o selecciona un archivo .html aquí</span>
+          </div>
+          <p class="text-[10px] text-zinc-400">O simplemente escribe o pega el código abajo directamente</p>
+        </div>
+
+        <!-- Code Area -->
+        <div>
+          <div class="flex items-center justify-between mb-1">
+            <label class="text-[11px] font-medium text-zinc-400">Código de la Aplicación (HTML / CSS / JS) *</label>
+            <span id="code-length" class="text-[10px] font-mono text-zinc-500">0 caracteres</span>
+          </div>
+          <textarea id="form-code" required rows="9" placeholder="<!DOCTYPE html>&#10;<html>&#10;  <head><title>Mi App</title></head>&#10;  <body>&#10;    <h1>Hola desde mi celular</h1>&#10;  </body>&#10;</html>" class="w-full px-3 py-2.5 text-xs font-mono bg-[#090A0F] border border-[#23273D] focus:border-violet-500 rounded-xl text-zinc-200 placeholder-zinc-600 focus:outline-none resize-y"></textarea>
+        </div>
+
+        <!-- Live Preview inside modal -->
+        <div id="preview-container" class="hidden flex-col gap-1.5 pt-2 border-t border-[#1F2232]">
+          <div class="flex items-center justify-between text-[11px] text-zinc-400">
+            <span class="font-semibold text-violet-300">Vista Previa Inmediata:</span>
+            <button type="button" id="btn-close-preview" class="text-zinc-500 hover:text-white">Ocultar</button>
+          </div>
+          <div class="h-48 w-full border border-[#2A2E47] rounded-xl overflow-hidden bg-white">
+            <iframe id="preview-iframe" class="w-full h-full border-0" sandbox="allow-scripts allow-modals allow-forms allow-same-origin"></iframe>
+          </div>
+        </div>
+
+        <!-- Form Actions -->
+        <div class="flex items-center justify-between pt-2 border-t border-[#1F2232]">
+          <button type="button" id="btn-preview" class="px-3.5 py-2 text-xs font-medium text-zinc-300 bg-[#161828] hover:bg-[#1E2238] border border-[#282D45] rounded-xl transition-all flex items-center gap-1.5">
+            <span>👁️</span> Probar Vista Previa
+          </button>
+
+          <div class="flex items-center gap-2">
+            <button type="button" id="btn-cancel-create" class="px-3.5 py-2 text-xs font-medium text-zinc-400 hover:text-white transition-all">
+              Cancelar
+            </button>
+            <button type="submit" id="btn-save-app" class="px-5 py-2 text-xs font-semibold text-white bg-gradient-to-r from-violet-600 to-indigo-600 hover:from-violet-500 hover:to-indigo-500 rounded-xl shadow-lg glow-violet transition-all flex items-center gap-1.5">
+              <span>💾 Guardar en Celular</span>
+            </button>
+          </div>
+        </div>
+      </form>
+    </div>
+  </div>
+
+  <!-- ========================================================================= -->
+  <!-- MODAL 2: UNIVERSAL APP RUNNER (PWA / Mobile Fullscreen Ready) -->
+  <!-- ========================================================================= -->
+  <div id="app-modal" class="hidden fixed inset-0 z-50 flex flex-col bg-[#090A0F] safe-top safe-bottom">
+    
+    <!-- Top Runner Navigation Bar -->
+    <header class="flex items-center justify-between px-3 sm:px-6 py-2.5 bg-[#0D0E15] border-b border-[#1F2232] select-none shrink-0 z-10">
+      <div class="flex items-center gap-2 sm:gap-3">
+        <button id="btn-close-app" class="flex items-center gap-1 px-3 py-1.5 text-xs font-semibold rounded-xl bg-[#1A1D2E] text-zinc-200 hover:text-white hover:bg-violet-600 border border-[#282D45] transition-all">
+          <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10 19l-7-7m0 0l7-7m-7 7h18"/>
+          </svg>
+          <span class="hidden sm:inline">Volver</span>
+        </button>
+
+        <div class="flex items-center gap-2">
+          <span id="modal-app-icon" class="text-base sm:text-lg">📱</span>
+          <div>
+            <div class="flex items-center gap-2">
+              <span id="modal-app-title" class="text-xs sm:text-sm font-bold text-white max-w-[140px] sm:max-w-xs truncate">App</span>
+              <span id="modal-app-badge" class="px-2 py-0.5 rounded text-[9px] sm:text-[10px] font-mono bg-violet-500/10 text-violet-300 border border-violet-500/20">Offline</span>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Action buttons inside runner -->
+      <div class="flex items-center gap-1.5 sm:gap-2">
+        <button id="btn-reload-runner" class="p-2 rounded-xl bg-[#141624] text-zinc-300 hover:text-white hover:bg-[#1E2238] border border-[#24283D] transition-all" title="Recargar App">
+          <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15"/>
+          </svg>
+        </button>
+
+        <button id="btn-edit-current-app" class="hidden sm:flex items-center gap-1 px-2.5 py-1.5 rounded-xl bg-[#141624] text-zinc-300 hover:text-white hover:bg-[#1E2238] border border-[#24283D] text-xs transition-all" title="Editar Código">
+          <span>✎</span> Editar
+        </button>
+
+        <button id="btn-fullscreen-runner" class="p-2 rounded-xl bg-[#141624] text-zinc-300 hover:text-white hover:bg-[#1E2238] border border-[#24283D] transition-all" title="Pantalla completa">
+          <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 8V4m0 0h4M4 4l5 5m11-1V4m0 0h-4m4 0l-5 5M4 16v4m0 0h4m-4 0l5-5m11 5l-5-5m5 5v-4m0 4h-4"/>
+          </svg>
+        </button>
+      </div>
+    </header>
+
+    <!-- App Container Area (Iframe or Digital Clock fallback) -->
+    <div id="runner-viewport" class="flex-1 w-full h-full relative bg-[#090A0F] overflow-hidden">
+      <!-- Built-in Clock view -->
+      <div id="clock-container" class="hidden w-full h-full flex flex-col items-center justify-center p-6 text-center bg-[#090A0F]">
         <div id="clock-day" class="px-3.5 py-1 rounded-full bg-violet-500/10 border border-violet-500/25 text-violet-300 text-xs font-medium uppercase tracking-wider mb-6">Lunes</div>
         <div id="clock-time" class="text-6xl sm:text-7xl font-mono font-bold tracking-tight text-white drop-shadow-[0_0_30px_rgba(139,92,246,0.35)]">00:00:00</div>
         <p id="clock-date" class="mt-4 text-base text-zinc-300">Cargando fecha...</p>
       </div>
+
+      <!-- Sandboxed iframe for user custom microapps -->
+      <iframe id="app-iframe" class="w-full h-full border-0 bg-white" sandbox="allow-scripts allow-modals allow-forms allow-same-origin allow-downloads allow-popups" allow="accelerometer; camera; geolocation; gyroscope; microphone"></iframe>
     </div>
   </div>
 
-  <!-- Modal Crear App -->
-  <div id="create-modal" class="hidden fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/80 backdrop-blur-md">
-    <div class="bg-[#0E101A] border border-[#23273D] rounded-2xl max-w-lg w-full p-6 flex flex-col gap-4">
-      <div class="flex items-center justify-between">
-        <h3 class="text-base font-bold text-white">Sistema de Crecimiento con Gemini</h3>
-        <button id="btn-close-create" class="text-zinc-400 hover:text-white">✕</button>
-      </div>
-      <p class="text-xs text-zinc-400 leading-relaxed">
-        Cada nueva microaplicación creada por Gemini se añade a <code class="text-violet-300 font-mono">apps-registry.json</code> y aparece automáticamente en este catálogo sin modificar la página principal.
-      </p>
-      <div class="flex justify-end">
-        <button id="btn-ok-create" class="px-4 py-2 text-xs font-semibold text-white bg-violet-600 hover:bg-violet-500 rounded-xl">Entendido</button>
-      </div>
-    </div>
+  <!-- Toast Notification -->
+  <div id="toast" class="fixed bottom-6 right-6 z-50 transform translate-y-20 opacity-0 transition-all duration-300 pointer-events-none px-4 py-2.5 rounded-xl bg-violet-600 text-white text-xs font-medium shadow-2xl flex items-center gap-2 border border-violet-400/40">
+    <span id="toast-icon">✓</span>
+    <span id="toast-msg">Mensaje</span>
   </div>
 
+  <!-- ========================================================================= -->
+  <!-- JAVASCRIPT: Offline-First Logic, IndexedDB, Cache & Runner -->
+  <!-- ========================================================================= -->
   <script>
+    // -------------------------------------------------------------
+    // 1. Service Worker & PWA Setup
+    // -------------------------------------------------------------
+    let deferredPrompt = null;
+
+    if ('serviceWorker' in navigator) {
+      window.addEventListener('load', () => {
+        navigator.serviceWorker.register('./sw.js')
+          .then(reg => {
+            console.log('Service Worker registrado:', reg.scope);
+            document.getElementById('storage-status').textContent = 'PWA & Cache Activo';
+          })
+          .catch(err => {
+            console.warn('Fallo registro ServiceWorker:', err);
+          });
+      });
+    }
+
+    window.addEventListener('beforeinstallprompt', (e) => {
+      e.preventDefault();
+      deferredPrompt = e;
+      const banner = document.getElementById('pwa-install-banner');
+      if (banner) banner.classList.remove('hidden');
+    });
+
+    const btnInstall = document.getElementById('btn-install-pwa');
+    if (btnInstall) {
+      btnInstall.addEventListener('click', async () => {
+        if (!deferredPrompt) return;
+        deferredPrompt.prompt();
+        const choice = await deferredPrompt.userChoice;
+        if (choice.outcome === 'accepted') {
+          showToast('Aplicación instalada en tu dispositivo');
+        }
+        deferredPrompt = null;
+        document.getElementById('pwa-install-banner').classList.add('hidden');
+      });
+    }
+
+    // Network Status Listeners
+    function updateOnlineStatus() {
+      const isOnline = navigator.onLine;
+      const badges = [document.getElementById('net-badge-mobile'), document.getElementById('net-badge-desktop')];
+      badges.forEach(badge => {
+        if (!badge) return;
+        if (isOnline) {
+          badge.className = 'flex items-center gap-1.5 px-2 py-1 rounded-full text-[10px] font-mono bg-emerald-500/10 text-emerald-400 border border-emerald-500/25';
+          badge.innerHTML = '<span class="w-1.5 h-1.5 rounded-full bg-emerald-400 animate-pulse"></span><span>Online</span>';
+        } else {
+          badge.className = 'flex items-center gap-1.5 px-2 py-1 rounded-full text-[10px] font-mono bg-amber-500/15 text-amber-300 border border-amber-500/30';
+          badge.innerHTML = '<span class="w-1.5 h-1.5 rounded-full bg-amber-400"></span><span>Offline (Celular)</span>';
+        }
+      });
+    }
+    window.addEventListener('online', () => { updateOnlineStatus(); showToast('Conexión reestablecida'); });
+    window.addEventListener('offline', () => { updateOnlineStatus(); showToast('Modo Offline: Usando caché del celular'); });
+    updateOnlineStatus();
+
+    // -------------------------------------------------------------
+    // 2. Offline Storage Layer (IndexedDB + localStorage fallback)
+    // -------------------------------------------------------------
+    const DB_NAME = 'MicroAppsLocalDB';
+    const DB_VERSION = 1;
+    const STORE_NAME = 'microapps';
+
+    function openDatabase() {
+      return new Promise((resolve, reject) => {
+        if (!window.indexedDB) {
+          resolve(null);
+          return;
+        }
+        const request = indexedDB.open(DB_NAME, DB_VERSION);
+        request.onupgradeneeded = (e) => {
+          const db = e.target.result;
+          if (!db.objectStoreNames.contains(STORE_NAME)) {
+            db.createObjectStore(STORE_NAME, { keyPath: 'id' });
+          }
+        };
+        request.onsuccess = () => resolve(request.result);
+        request.onerror = () => resolve(null);
+      });
+    }
+
+    async function dbSaveApp(app) {
+      try {
+        const db = await openDatabase();
+        if (db) {
+          const tx = db.transaction(STORE_NAME, 'readwrite');
+          tx.objectStore(STORE_NAME).put(app);
+          await new Promise(r => tx.oncomplete = r);
+        }
+      } catch (e) {
+        console.warn('IndexedDB write error, using fallback:', e);
+      }
+      // Backup en localStorage
+      const localApps = getLocalStorageApps();
+      const index = localApps.findIndex(a => a.id === app.id);
+      if (index >= 0) {
+        localApps[index] = app;
+      } else {
+        localApps.unshift(app);
+      }
+      localStorage.setItem('mma_local_apps', JSON.stringify(localApps));
+    }
+
+    async function dbGetApps() {
+      try {
+        const db = await openDatabase();
+        if (db) {
+          const tx = db.transaction(STORE_NAME, 'readonly');
+          const store = tx.objectStore(STORE_NAME);
+          const req = store.getAll();
+          const items = await new Promise((res, rej) => {
+            req.onsuccess = () => res(req.result);
+            req.onerror = () => rej([]);
+          });
+          if (items && items.length > 0) {
+            return items;
+          }
+        }
+      } catch (e) {
+        console.warn('IndexedDB read error, using fallback:', e);
+      }
+      return getLocalStorageApps();
+    }
+
+    async function dbDeleteApp(id) {
+      try {
+        const db = await openDatabase();
+        if (db) {
+          const tx = db.transaction(STORE_NAME, 'readwrite');
+          tx.objectStore(STORE_NAME).delete(id);
+          await new Promise(r => tx.oncomplete = r);
+        }
+      } catch (e) {}
+      const localApps = getLocalStorageApps().filter(a => a.id !== id);
+      localStorage.setItem('mma_local_apps', JSON.stringify(localApps));
+    }
+
+    function getLocalStorageApps() {
+      try {
+        return JSON.parse(localStorage.getItem('mma_local_apps') || '[]');
+      } catch (e) {
+        return [];
+      }
+    }
+
+    // -------------------------------------------------------------
+    // 3. Built-in Samples & Presets (Calculadora, Notas, Pomodoro)
+    // -------------------------------------------------------------
+    const PRESETS = {
+      calc: {
+        name: "Calculadora Móvil",
+        category: "Utilidades",
+        icon: "🧮",
+        description: "Calculadora rápida táctil offline",
+        code: `<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Calculadora</title>
+  <style>
+    * { box-sizing: border-box; margin: 0; padding: 0; font-family: -apple-system, sans-serif; }
+    body { background: #0F111A; color: white; display: flex; align-items: center; justify-content: center; min-height: 100vh; padding: 16px; }
+    .calc { width: 100%; max-width: 320px; background: #181B29; border-radius: 24px; padding: 20px; box-shadow: 0 10px 30px rgba(0,0,0,0.5); }
+    #display { width: 100%; height: 70px; background: #0A0B10; border-radius: 16px; border: 1px solid #282C40; color: #10B981; font-size: 32px; font-family: monospace; text-align: right; padding: 14px; margin-bottom: 16px; overflow-x: auto; }
+    .grid { display: grid; grid-template-columns: repeat(4, 1fr); gap: 10px; }
+    button { height: 55px; border-radius: 14px; border: none; font-size: 20px; font-weight: 600; cursor: pointer; transition: 0.1s; color: white; background: #23273A; }
+    button:active { transform: scale(0.95); opacity: 0.8; }
+    button.op { background: #8B5CF6; }
+    button.clear { background: #EF4444; }
+    button.eq { background: #10B981; grid-column: span 2; }
+  </style>
+</head>
+<body>
+  <div class="calc">
+    <div id="display">0</div>
+    <div class="grid">
+      <button class="clear" onclick="clearD()">C</button>
+      <button onclick="del()">⌫</button>
+      <button class="op" onclick="press('/')">/</button>
+      <button class="op" onclick="press('*')">×</button>
+      <button onclick="press('7')">7</button>
+      <button onclick="press('8')">8</button>
+      <button onclick="press('9')">9</button>
+      <button class="op" onclick="press('-')">-</button>
+      <button onclick="press('4')">4</button>
+      <button onclick="press('5')">5</button>
+      <button onclick="press('6')">6</button>
+      <button class="op" onclick="press('+')">+</button>
+      <button onclick="press('1')">1</button>
+      <button onclick="press('2')">2</button>
+      <button onclick="press('3')">3</button>
+      <button onclick="press('.')">.</button>
+      <button onclick="press('0')">0</button>
+      <button class="eq" onclick="calculate()">=</button>
+    </div>
+  </div>
+  <script>
+    let d = document.getElementById('display');
+    function press(v) { if (d.innerText === '0' && v !== '.') d.innerText = ''; d.innerText += v; }
+    function clearD() { d.innerText = '0'; }
+    function del() { d.innerText = d.innerText.length > 1 ? d.innerText.slice(0, -1) : '0'; }
+    function calculate() {
+      try { d.innerText = Function('"use strict";return (' + d.innerText.replace(/×/g, '*') + ')')(); }
+      catch(e) { d.innerText = 'Error'; setTimeout(clearD, 1200); }
+    }
+  <\/script>
+</body>
+</html>`
+      },
+      notes: {
+        name: "Bloc de Notas Local",
+        category: "Productividad",
+        icon: "📝",
+        description: "Notas rápidas guardadas automáticamente en tu teléfono",
+        code: `<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Bloc de Notas</title>
+  <style>
+    * { box-sizing: border-box; margin: 0; padding: 0; font-family: -apple-system, sans-serif; }
+    body { background: #0D0E15; color: #F1F5F9; padding: 16px; min-height: 100vh; display: flex; flex-direction: column; }
+    header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 12px; }
+    h1 { font-size: 18px; font-weight: 700; color: #8B5CF6; }
+    #status { font-size: 11px; color: #10B981; }
+    textarea { flex: 1; width: 100%; min-height: 70vh; background: #161826; border: 1px solid #2B3047; border-radius: 16px; padding: 16px; color: #F8FAFC; font-size: 15px; line-height: 1.6; outline: none; resize: none; }
+    textarea:focus { border-color: #8B5CF6; }
+  </style>
+</head>
+<body>
+  <header>
+    <h1>📝 Mis Notas Offline</h1>
+    <span id="status">● Guardado</span>
+  </header>
+  <textarea id="pad" placeholder="Escribe aquí tus ideas... se guardan automáticamente en tu celular incluso sin internet."></textarea>
+  <script>
+    const pad = document.getElementById('pad');
+    const status = document.getElementById('status');
+    pad.value = localStorage.getItem('offline_quick_notes') || '';
+    pad.addEventListener('input', () => {
+      status.textContent = 'Guardando...';
+      localStorage.setItem('offline_quick_notes', pad.value);
+      setTimeout(() => status.textContent = '● Guardado', 400);
+    });
+  <\/script>
+</body>
+</html>`
+      },
+      timer: {
+        name: "Cronómetro & Pomodoro",
+        category: "Herramientas",
+        icon: "⏱️",
+        description: "Control de tiempo y pausas sin internet",
+        code: `<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Pomodoro</title>
+  <style>
+    * { box-sizing: border-box; margin: 0; padding: 0; font-family: -apple-system, sans-serif; }
+    body { background: #0A0B10; color: white; display: flex; flex-direction: column; align-items: center; justify-content: center; min-height: 100vh; text-align: center; padding: 20px; }
+    .card { background: #141724; border: 1px solid #252A3F; border-radius: 28px; padding: 32px 24px; width: 100%; max-width: 320px; }
+    h2 { font-size: 14px; text-transform: uppercase; letter-spacing: 2px; color: #8B5CF6; margin-bottom: 12px; }
+    #time { font-size: 56px; font-weight: 800; font-family: monospace; color: #F8FAFC; margin-bottom: 24px; text-shadow: 0 0 20px rgba(139,92,246,0.3); }
+    .btns { display: flex; gap: 10px; justify-content: center; }
+    button { padding: 12px 24px; border-radius: 14px; border: none; font-size: 14px; font-weight: 700; cursor: pointer; transition: 0.1s; }
+    button:active { transform: scale(0.95); }
+    .start { background: #8B5CF6; color: white; }
+    .reset { background: #23273A; color: #94A3B8; }
+  </style>
+</head>
+<body>
+  <div class="card">
+    <h2 id="mode">Modo Enfoque</h2>
+    <div id="time">25:00</div>
+    <div class="btns">
+      <button class="start" id="toggle-btn" onclick="toggle()">Iniciar</button>
+      <button class="reset" onclick="reset()">Reiniciar</button>
+    </div>
+  </div>
+  <script>
+    let timeLeft = 25 * 60;
+    let timer = null;
+    function update() {
+      const m = String(Math.floor(timeLeft / 60)).padStart(2, '0');
+      const s = String(timeLeft % 60).padStart(2, '0');
+      document.getElementById('time').textContent = m + ':' + s;
+    }
+    function toggle() {
+      const btn = document.getElementById('toggle-btn');
+      if (timer) {
+        clearInterval(timer);
+        timer = null;
+        btn.textContent = 'Continuar';
+      } else {
+        btn.textContent = 'Pausar';
+        timer = setInterval(() => {
+          if (timeLeft > 0) { timeLeft--; update(); }
+          else { clearInterval(timer); timer = null; alert('¡Tiempo completado!'); reset(); }
+        }, 1000);
+      }
+    }
+    function reset() {
+      if (timer) clearInterval(timer);
+      timer = null;
+      timeLeft = 25 * 60;
+      update();
+      document.getElementById('toggle-btn').textContent = 'Iniciar';
+    }
+    update();
+  <\/script>
+</body>
+</html>`
+      },
+      todos: {
+        name: "Lista de Tareas",
+        category: "Productividad",
+        icon: "✓",
+        description: "Checklist minimalista con almacenamiento local",
+        code: `<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Tareas</title>
+  <style>
+    * { box-sizing: border-box; margin: 0; padding: 0; font-family: -apple-system, sans-serif; }
+    body { background: #0B0D14; color: #F1F5F9; padding: 16px; min-height: 100vh; }
+    .container { max-width: 400px; margin: 0 auto; }
+    h1 { font-size: 20px; font-weight: 700; color: #8B5CF6; margin-bottom: 16px; }
+    .input-row { display: flex; gap: 8px; margin-bottom: 16px; }
+    input { flex: 1; padding: 12px 16px; border-radius: 14px; border: 1px solid #23273D; background: #141624; color: white; outline: none; }
+    button.add { padding: 12px 18px; border-radius: 14px; border: none; background: #8B5CF6; color: white; font-weight: 600; cursor: pointer; }
+    ul { list-style: none; display: flex; flex-direction: column; gap: 8px; }
+    li { display: flex; align-items: center; justify-content: space-between; padding: 12px 16px; background: #141624; border: 1px solid #23273D; border-radius: 14px; }
+    li.done span { text-decoration: line-through; opacity: 0.5; }
+    .del { background: none; border: none; color: #EF4444; font-size: 16px; cursor: pointer; }
+  </style>
+</head>
+<body>
+  <div class="container">
+    <h1>✓ Mis Tareas de Hoy</h1>
+    <div class="input-row">
+      <input id="txt" placeholder="Nueva tarea...">
+      <button class="add" onclick="add()">+</button>
+    </div>
+    <ul id="list"></ul>
+  </div>
+  <script>
+    let items = JSON.parse(localStorage.getItem('off_todos') || '[]');
+    function render() {
+      const ul = document.getElementById('list');
+      ul.innerHTML = '';
+      items.forEach((item, i) => {
+        const li = document.createElement('li');
+        if (item.done) li.classList.add('done');
+        li.innerHTML = '<span onclick="toggle(' + i + ')" style="cursor:pointer;flex:1">' + item.text + '</span><button class="del" onclick="del(' + i + ')">✕</button>';
+        ul.appendChild(li);
+      });
+      localStorage.setItem('off_todos', JSON.stringify(items));
+    }
+    function add() {
+      const input = document.getElementById('txt');
+      if (!input.value.trim()) return;
+      items.unshift({ text: input.value.trim(), done: false });
+      input.value = '';
+      render();
+    }
+    function toggle(i) { items[i].done = !items[i].done; render(); }
+    function del(i) { items.splice(i, 1); render(); }
+    render();
+  <\/script>
+</body>
+</html>`
+      }
+    };
+
+    // -------------------------------------------------------------
+    // 4. State Management & Initialization
+    // -------------------------------------------------------------
     const FALLBACK_REGISTRY = [
       {
         id: "digital-clock",
@@ -117,79 +818,294 @@
         description: "Reloj digital minimalista",
         icon: "Clock",
         category: "Utilidades",
-        status: "Disponible"
+        status: "Disponible",
+        isLocal: false
       }
     ];
 
-    let apps = [...FALLBACK_REGISTRY];
-    let currentTab = 'apps';
+    let registryApps = [...FALLBACK_REGISTRY];
+    let localApps = [];
+    let currentTab = 'all';
     let searchQuery = '';
     let favorites = JSON.parse(localStorage.getItem('mma_favs') || '[]');
     let clockTimer = null;
+    let currentlyRunningApp = null;
 
-    fetch('./apps-registry.json')
-      .then(r => r.ok ? r.json() : null)
-      .then(data => { if (data && Array.isArray(data.apps)) { apps = data.apps; render(); } })
-      .catch(() => render());
+    // Load registry & local apps
+    async function loadAllApps() {
+      // 1. Fetch remote registry if possible
+      try {
+        const r = await fetch('./apps-registry.json');
+        if (r.ok) {
+          const data = await r.json();
+          if (data && Array.isArray(data.apps)) {
+            registryApps = data.apps.map(a => ({ ...a, isLocal: false }));
+          }
+        }
+      } catch (e) {
+        console.log('Usando catálogo fallback offline');
+      }
+
+      // 2. Load locally cached/created apps
+      localApps = await dbGetApps();
+
+      // If user has no local apps yet, let's pre-populate the Calculadora as a gift so it's immediately ready offline!
+      if (localApps.length === 0 && !localStorage.getItem('mma_initialized')) {
+        const starter = {
+          id: 'local-calc-starter',
+          name: PRESETS.calc.name,
+          description: PRESETS.calc.description,
+          icon: PRESETS.calc.icon,
+          category: PRESETS.calc.category,
+          status: 'En celular (Offline)',
+          version: '1.0.0',
+          code: PRESETS.calc.code,
+          createdAt: new Date().toISOString(),
+          isLocal: true
+        };
+        await dbSaveApp(starter);
+        localApps = [starter];
+        localStorage.setItem('mma_initialized', 'true');
+      }
+
+      render();
+    }
+
+    // -------------------------------------------------------------
+    // 5. Render Catalogue
+    // -------------------------------------------------------------
+    function getAllCombinedApps() {
+      // Prioritize local apps, then registry apps
+      const map = new Map();
+      localApps.forEach(a => map.set(a.id, a));
+      registryApps.forEach(a => {
+        if (!map.has(a.id)) map.set(a.id, a);
+      });
+      return Array.from(map.values());
+    }
 
     function render() {
+      const allApps = getAllCombinedApps();
       const grid = document.getElementById('apps-grid');
-      document.getElementById('app-count').textContent = apps.length;
-      const favBadge = document.getElementById('fav-count');
-      favBadge.textContent = favorites.length;
-      favBadge.classList.toggle('hidden', favorites.length === 0);
+      const emptyState = document.getElementById('empty-state');
 
-      const filtered = apps.filter(a => {
-        if (currentTab === 'favorites' && !favorites.includes(a.id)) return false;
+      // Update counters
+      const totalCount = allApps.length;
+      const localCount = localApps.length;
+      const favCount = favorites.length;
+
+      document.getElementById('app-count-all').textContent = totalCount;
+      document.getElementById('app-count-local').textContent = localCount;
+      document.getElementById('fav-count').textContent = favCount;
+
+      const mobAll = document.getElementById('mob-count-all');
+      const mobLoc = document.getElementById('mob-count-local');
+      const mobFav = document.getElementById('mob-count-fav');
+      if (mobAll) mobAll.textContent = totalCount;
+      if (mobLoc) mobLoc.textContent = localCount;
+      if (mobFav) mobFav.textContent = favCount;
+
+      document.getElementById('app-counter-badge').textContent = `${totalCount} apps`;
+
+      // Filter
+      const filtered = allApps.filter(app => {
+        if (currentTab === 'local' && !app.isLocal) return false;
+        if (currentTab === 'favorites' && !favorites.includes(app.id)) return false;
         if (searchQuery) {
           const q = searchQuery.toLowerCase();
-          return a.name.toLowerCase().includes(q) || a.description.toLowerCase().includes(q) || a.category.toLowerCase().includes(q);
+          return (app.name || '').toLowerCase().includes(q) ||
+                 (app.description || '').toLowerCase().includes(q) ||
+                 (app.category || '').toLowerCase().includes(q);
         }
         return true;
       });
 
+      if (filtered.length === 0) {
+        grid.innerHTML = '';
+        emptyState.classList.remove('hidden');
+        emptyState.classList.add('flex');
+        return;
+      }
+
+      emptyState.classList.add('hidden');
+      emptyState.classList.remove('flex');
       grid.innerHTML = '';
+
       filtered.forEach(app => {
         const isFav = favorites.includes(app.id);
         const card = document.createElement('div');
-        card.className = 'group bg-[#11131F] hover:bg-[#151829] border border-[#23273D] hover:border-violet-500/50 rounded-2xl p-6 transition-all cursor-pointer glow-violet flex flex-col justify-between';
+        card.className = 'group bg-[#11131F] hover:bg-[#151829] border border-[#23273D] hover:border-violet-500/50 rounded-2xl p-4 sm:p-5 transition-all cursor-pointer glow-violet flex flex-col justify-between relative';
+
+        const displayIcon = app.icon === 'Clock' ? '⏱️' : (app.icon || '📱');
+        const isOfflineLocal = app.isLocal;
+
         card.innerHTML = `
           <div>
-            <div class="flex items-start justify-between mb-4">
-              <div class="w-12 h-12 rounded-xl bg-violet-600/10 border border-violet-500/30 flex items-center justify-center text-violet-400">
-                <svg class="w-6 h-6" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="1.75">
-                  <circle cx="12" cy="12" r="9" /><path stroke-linecap="round" stroke-linejoin="round" d="M12 7v5l3 3" />
-                </svg>
+            <div class="flex items-start justify-between mb-3">
+              <div class="w-11 h-11 rounded-xl bg-violet-600/15 border border-violet-500/30 flex items-center justify-center text-xl">
+                ${displayIcon}
               </div>
-              <div class="flex items-center gap-2">
-                <span class="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-[10px] font-medium bg-emerald-500/10 text-emerald-400 border border-emerald-500/20">
-                  <span class="w-1.5 h-1.5 rounded-full bg-emerald-400 animate-pulse"></span>${app.status}
-                </span>
-                <button class="fav-btn p-1.5 rounded-lg text-xs ${isFav ? 'text-amber-400' : 'text-zinc-500 hover:text-zinc-300'}">★</button>
+              <div class="flex items-center gap-1.5">
+                ${isOfflineLocal ? `
+                  <span class="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[10px] font-mono bg-emerald-500/15 text-emerald-300 border border-emerald-500/30">
+                    <span class="w-1.5 h-1.5 rounded-full bg-emerald-400"></span>Celular
+                  </span>
+                ` : `
+                  <span class="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[10px] font-mono bg-zinc-800 text-zinc-400 border border-zinc-700">
+                    Nube
+                  </span>
+                `}
+                <button class="fav-btn p-1.5 rounded-lg text-sm ${isFav ? 'text-amber-400' : 'text-zinc-600 hover:text-zinc-300'}">★</button>
               </div>
             </div>
-            <h3 class="text-base font-semibold text-white group-hover:text-violet-300">${app.name}</h3>
-            <p class="text-xs text-zinc-400 mt-1">${app.description}</p>
+
+            <h3 class="text-sm sm:text-base font-bold text-white group-hover:text-violet-300 transition-colors">${escapeHtml(app.name)}</h3>
+            <p class="text-xs text-zinc-400 mt-1 line-clamp-2">${escapeHtml(app.description || 'Sin descripción')}</p>
           </div>
-          <div class="mt-6 pt-4 border-t border-[#1C2033] flex items-center justify-between text-xs">
-            <span class="px-2.5 py-0.5 rounded-md bg-[#1A1D2E] text-violet-300 border border-violet-500/20">${app.category}</span>
-            <span class="font-mono text-zinc-400 group-hover:text-violet-400">Abrir app →</span>
+
+          <div class="mt-4 pt-3 border-t border-[#1C2033] flex items-center justify-between text-xs">
+            <span class="px-2 py-0.5 rounded-md bg-[#1A1D2E] text-violet-300 border border-violet-500/20 text-[11px]">${escapeHtml(app.category || 'General')}</span>
+            
+            <div class="flex items-center gap-2">
+              ${isOfflineLocal ? `
+                <button class="edit-btn p-1 text-zinc-400 hover:text-violet-300" title="Editar código">✎</button>
+                <button class="del-btn p-1 text-zinc-400 hover:text-red-400" title="Eliminar del celular">🗑</button>
+              ` : ''}
+              <span class="font-mono text-zinc-300 group-hover:text-violet-400 font-medium">Abrir →</span>
+            </div>
           </div>
         `;
+
+        // Card Click Handler
         card.addEventListener('click', (e) => {
           if (e.target.closest('.fav-btn')) {
             e.stopPropagation();
-            favorites = isFav ? favorites.filter(id => id !== app.id) : [...favorites, app.id];
-            localStorage.setItem('mma_favs', JSON.stringify(favorites));
-            render();
+            toggleFavorite(app.id);
+            return;
+          }
+          if (e.target.closest('.del-btn')) {
+            e.stopPropagation();
+            deleteLocalApp(app);
+            return;
+          }
+          if (e.target.closest('.edit-btn')) {
+            e.stopPropagation();
+            editLocalApp(app);
             return;
           }
           openApp(app);
         });
+
         grid.appendChild(card);
       });
     }
 
+    function toggleFavorite(id) {
+      favorites = favorites.includes(id) ? favorites.filter(x => x !== id) : [...favorites, id];
+      localStorage.setItem('mma_favs', JSON.stringify(favorites));
+      render();
+    }
+
+    async function deleteLocalApp(app) {
+      if (confirm(`¿Eliminar "${app.name}" de la memoria de tu celular?`)) {
+        await dbDeleteApp(app.id);
+        localApps = localApps.filter(a => a.id !== app.id);
+        showToast(`"${app.name}" eliminada`);
+        render();
+      }
+    }
+
+    function editLocalApp(app) {
+      openCreateModal(app);
+    }
+
+    function escapeHtml(text) {
+      const div = document.createElement('div');
+      div.innerText = text;
+      return div.innerHTML;
+    }
+
+    // -------------------------------------------------------------
+    // 6. Universal App Runner (Modal & Sandbox)
+    // -------------------------------------------------------------
+    function openApp(app) {
+      currentlyRunningApp = app;
+      document.getElementById('modal-app-title').textContent = app.name;
+      document.getElementById('modal-app-icon').textContent = app.icon === 'Clock' ? '⏱️' : (app.icon || '📱');
+      document.getElementById('modal-app-badge').textContent = app.isLocal ? 'Offline (Celular)' : 'Disponible';
+
+      const modal = document.getElementById('app-modal');
+      const clockView = document.getElementById('clock-container');
+      const iframe = document.getElementById('app-iframe');
+      const editBtn = document.getElementById('btn-edit-current-app');
+
+      if (app.isLocal) {
+        editBtn.classList.remove('hidden');
+      } else {
+        editBtn.classList.add('hidden');
+      }
+
+      modal.classList.remove('hidden');
+
+      if (app.id === 'digital-clock' && !app.code) {
+        iframe.classList.add('hidden');
+        clockView.classList.remove('hidden');
+        updateClock();
+        if (clockTimer) clearInterval(clockTimer);
+        clockTimer = setInterval(updateClock, 1000);
+      } else {
+        clockView.classList.add('hidden');
+        iframe.classList.remove('hidden');
+        renderCodeInIframe(iframe, app.code || '<h1>Sin código</h1>');
+      }
+    }
+
+    function renderCodeInIframe(iframe, code) {
+      // Inyectar viewport responsivo y estilos base si no los trae
+      let processedCode = code;
+      if (!processedCode.includes('<meta name="viewport"')) {
+        processedCode = `<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">\n` + processedCode;
+      }
+      iframe.srcdoc = processedCode;
+    }
+
+    function closeAppRunner() {
+      document.getElementById('app-modal').classList.add('hidden');
+      if (clockTimer) {
+        clearInterval(clockTimer);
+        clockTimer = null;
+      }
+      document.getElementById('app-iframe').srcdoc = 'about:blank';
+      currentlyRunningApp = null;
+    }
+
+    document.getElementById('btn-close-app').addEventListener('click', closeAppRunner);
+
+    document.getElementById('btn-reload-runner').addEventListener('click', () => {
+      if (currentlyRunningApp) {
+        openApp(currentlyRunningApp);
+        showToast('App recargada');
+      }
+    });
+
+    document.getElementById('btn-edit-current-app').addEventListener('click', () => {
+      if (currentlyRunningApp && currentlyRunningApp.isLocal) {
+        const appToEdit = currentlyRunningApp;
+        closeAppRunner();
+        editLocalApp(appToEdit);
+      }
+    });
+
+    document.getElementById('btn-fullscreen-runner').addEventListener('click', () => {
+      const runner = document.getElementById('app-modal');
+      if (!document.fullscreenElement) {
+        runner.requestFullscreen().catch(() => {});
+      } else {
+        document.exitFullscreen().catch(() => {});
+      }
+    });
+
+    // Clock Logic
     const DAYS = ['Domingo', 'Lunes', 'Martes', 'Miércoles', 'Jueves', 'Viernes', 'Sábado'];
     const MONTHS = ['Enero', 'Febrero', 'Marzo', 'Abril', 'Mayo', 'Junio', 'Julio', 'Agosto', 'Septiembre', 'Octubre', 'Noviembre', 'Diciembre'];
 
@@ -204,18 +1120,186 @@
       document.getElementById('clock-date').textContent = `${dayName}, ${now.getDate()} de ${MONTHS[now.getMonth()]} de ${now.getFullYear()}`;
     }
 
-    function openApp(app) {
-      document.getElementById('modal-app-title').textContent = app.name;
-      document.getElementById('app-modal').classList.remove('hidden');
-      updateClock();
-      clockTimer = setInterval(updateClock, 1000);
+    // -------------------------------------------------------------
+    // 7. Modal Create / Upload / Paste Microapp Logic
+    // -------------------------------------------------------------
+    function openCreateModal(editingApp = null) {
+      const modal = document.getElementById('create-modal');
+      const form = document.getElementById('app-form');
+      const title = document.getElementById('create-modal-title');
+      const previewCont = document.getElementById('preview-container');
+      previewCont.classList.add('hidden');
+
+      if (editingApp) {
+        title.textContent = `Editar "${editingApp.name}"`;
+        document.getElementById('editing-app-id').value = editingApp.id;
+        document.getElementById('form-name').value = editingApp.name || '';
+        document.getElementById('form-icon').value = editingApp.icon || '📱';
+        document.getElementById('form-category').value = editingApp.category || 'Utilidades';
+        document.getElementById('form-desc').value = editingApp.description || '';
+        document.getElementById('form-code').value = editingApp.code || '';
+      } else {
+        title.textContent = 'Subir o Pegar Microaplicación';
+        form.reset();
+        document.getElementById('editing-app-id').value = '';
+        document.getElementById('form-icon').value = '📱';
+      }
+
+      updateCodeLength();
+      modal.classList.remove('hidden');
     }
 
-    document.getElementById('btn-close-app').addEventListener('click', () => {
-      document.getElementById('app-modal').classList.add('hidden');
-      clearInterval(clockTimer);
+    function closeCreateModal() {
+      document.getElementById('create-modal').classList.add('hidden');
+      document.getElementById('preview-iframe').srcdoc = 'about:blank';
+    }
+
+    document.getElementById('btn-create').addEventListener('click', () => openCreateModal());
+    document.getElementById('btn-create-mobile').addEventListener('click', () => openCreateModal());
+    document.getElementById('btn-quick-upload-mobile').addEventListener('click', () => openCreateModal());
+    document.getElementById('btn-empty-create').addEventListener('click', () => openCreateModal());
+    document.getElementById('btn-close-create').addEventListener('click', closeCreateModal);
+    document.getElementById('btn-cancel-create').addEventListener('click', closeCreateModal);
+
+    // Quick presets
+    document.querySelectorAll('.preset-btn').forEach(btn => {
+      btn.addEventListener('click', () => {
+        const key = btn.getAttribute('data-preset');
+        const p = PRESETS[key];
+        if (p) {
+          document.getElementById('form-name').value = p.name;
+          document.getElementById('form-icon').value = p.icon;
+          document.getElementById('form-category').value = p.category;
+          document.getElementById('form-desc').value = p.description;
+          document.getElementById('form-code').value = p.code;
+          updateCodeLength();
+          showToast(`Plantilla "${p.name}" cargada`);
+        }
+      });
     });
 
+    document.getElementById('btn-quick-samples').addEventListener('click', () => {
+      openCreateModal();
+    });
+
+    // Icon quick pickers
+    document.querySelectorAll('.icon-quick-pick').forEach(btn => {
+      btn.addEventListener('click', () => {
+        document.getElementById('form-icon').value = btn.textContent;
+      });
+    });
+
+    // Live code length counter
+    const codeArea = document.getElementById('form-code');
+    function updateCodeLength() {
+      const len = (codeArea.value || '').length;
+      document.getElementById('code-length').textContent = `${len.toLocaleString()} caracteres`;
+    }
+    codeArea.addEventListener('input', () => {
+      updateCodeLength();
+      // Auto-extract title if form-name is empty
+      const nameInput = document.getElementById('form-name');
+      if (!nameInput.value.trim()) {
+        const match = codeArea.value.match(/<title>(.*?)<\/title>/i);
+        if (match && match[1]) {
+          nameInput.value = match[1].trim();
+        }
+      }
+    });
+
+    // File upload via Drag & Drop or File Input
+    const fileInput = document.getElementById('form-file');
+    fileInput.addEventListener('change', (e) => {
+      const file = e.target.files[0];
+      if (!file) return;
+      readFileContent(file);
+    });
+
+    function readFileContent(file) {
+      const reader = new FileReader();
+      reader.onload = (e) => {
+        const content = e.target.result;
+        codeArea.value = content;
+        updateCodeLength();
+
+        const nameInput = document.getElementById('form-name');
+        if (!nameInput.value.trim()) {
+          const match = content.match(/<title>(.*?)<\/title>/i);
+          nameInput.value = match && match[1] ? match[1].trim() : file.name.replace(/\.[^/.]+$/, "");
+        }
+        showToast(`Archivo "${file.name}" cargado`);
+      };
+      reader.readAsText(file);
+    }
+
+    // Modal Live Preview
+    document.getElementById('btn-preview').addEventListener('click', () => {
+      const code = codeArea.value.trim();
+      if (!code) {
+        showToast('Pega o escribe código para previsualizar');
+        return;
+      }
+      const container = document.getElementById('preview-container');
+      const iframe = document.getElementById('preview-iframe');
+      container.classList.remove('hidden');
+      renderCodeInIframe(iframe, code);
+    });
+
+    document.getElementById('btn-close-preview').addEventListener('click', () => {
+      document.getElementById('preview-container').classList.add('hidden');
+      document.getElementById('preview-iframe').srcdoc = 'about:blank';
+    });
+
+    // Form Save (Guarda en Celular / IndexedDB)
+    document.getElementById('app-form').addEventListener('submit', async (e) => {
+      e.preventDefault();
+      const name = document.getElementById('form-name').value.trim();
+      const code = document.getElementById('form-code').value.trim();
+      const icon = document.getElementById('form-icon').value.trim() || '📱';
+      const category = document.getElementById('form-category').value;
+      const desc = document.getElementById('form-desc').value.trim() || 'Microapp guardada en tu celular';
+      const editingId = document.getElementById('editing-app-id').value;
+
+      if (!name || !code) {
+        showToast('Por favor completa el nombre y el código');
+        return;
+      }
+
+      const id = editingId || `local-${Date.now()}`;
+      const app = {
+        id,
+        name,
+        description: desc,
+        icon,
+        category,
+        status: 'En celular (Offline)',
+        version: '1.0.0',
+        code,
+        createdAt: new Date().toISOString(),
+        isLocal: true
+      };
+
+      await dbSaveApp(app);
+
+      // Actualizar memoria local
+      const idx = localApps.findIndex(a => a.id === id);
+      if (idx >= 0) {
+        localApps[idx] = app;
+      } else {
+        localApps.unshift(app);
+      }
+
+      closeCreateModal();
+      render();
+      showToast(`¡"${name}" guardada y lista en tu celular!`);
+
+      // Abrir inmediatamente la app renderizada
+      openApp(app);
+    });
+
+    // -------------------------------------------------------------
+    // 8. Search & Navigation Filters
+    // -------------------------------------------------------------
     document.getElementById('search-input').addEventListener('input', (e) => {
       searchQuery = e.target.value;
       render();
@@ -224,17 +1308,58 @@
     document.querySelectorAll('.nav-btn').forEach(btn => {
       btn.addEventListener('click', () => {
         currentTab = btn.getAttribute('data-tab');
-        document.getElementById('section-title').textContent = currentTab === 'favorites' ? 'Favoritos' : currentTab === 'home' ? 'Inicio' : 'Mis aplicaciones';
+        document.querySelectorAll('.nav-btn').forEach(b => {
+          b.classList.remove('tab-active');
+          if (b.getAttribute('data-tab') === currentTab) {
+            b.classList.add('tab-active');
+          }
+        });
+
+        const titleMap = {
+          'all': 'Todas las aplicaciones',
+          'local': 'Guardadas en mi celular (Offline)',
+          'favorites': 'Mis aplicaciones favoritas'
+        };
+        document.getElementById('section-title').textContent = titleMap[currentTab] || 'Mis aplicaciones';
         render();
       });
     });
 
-    document.getElementById('btn-create').addEventListener('click', () => document.getElementById('create-modal').classList.remove('hidden'));
-    document.getElementById('btn-settings').addEventListener('click', () => document.getElementById('create-modal').classList.remove('hidden'));
-    document.getElementById('btn-close-create').addEventListener('click', () => document.getElementById('create-modal').classList.add('hidden'));
-    document.getElementById('btn-ok-create').addEventListener('click', () => document.getElementById('create-modal').classList.add('hidden'));
+    // -------------------------------------------------------------
+    // 9. Export / Backup feature
+    // -------------------------------------------------------------
+    document.getElementById('btn-export-backup').addEventListener('click', () => {
+      if (localApps.length === 0) {
+        showToast('No tienes aplicaciones locales para exportar');
+        return;
+      }
+      const dataStr = "data:text/json;charset=utf-8," + encodeURIComponent(JSON.stringify(localApps, null, 2));
+      const downloadAnchor = document.createElement('a');
+      downloadAnchor.setAttribute("href", dataStr);
+      downloadAnchor.setAttribute("download", `microapps-backup-${new Date().toISOString().slice(0,10)}.json`);
+      document.body.appendChild(downloadAnchor);
+      downloadAnchor.click();
+      downloadAnchor.remove();
+      showToast('Copia de seguridad descargada');
+    });
 
-    render();
+    // -------------------------------------------------------------
+    // 10. Toast Helper
+    // -------------------------------------------------------------
+    let toastTimeout = null;
+    function showToast(msg) {
+      const toast = document.getElementById('toast');
+      const toastMsg = document.getElementById('toast-msg');
+      toastMsg.textContent = msg;
+      toast.classList.remove('translate-y-20', 'opacity-0');
+      if (toastTimeout) clearTimeout(toastTimeout);
+      toastTimeout = setTimeout(() => {
+        toast.classList.add('translate-y-20', 'opacity-0');
+      }, 3000);
+    }
+
+    // Initialize
+    loadAllApps();
   </script>
 </body>
 </html>
